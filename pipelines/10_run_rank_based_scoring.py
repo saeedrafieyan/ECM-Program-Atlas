@@ -1,78 +1,51 @@
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import List
 
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from scipy.stats import pearsonr, spearmanr
 
-
-PROJECT_ROOT = Path(".")
-
-CURATED_PROGRAM_FILE = (
-    PROJECT_ROOT
-    / "outputs"
-    / "latent_baseline_embeddings"
-    / "rna_tissue_consensus"
-    / "curated_recurring_ecm_programs"
-    / "combined_nmf_module_annotations_curated_programs.csv"
+from ecm_program_atlas.scoring import (
+    ProgramGeneSet,
+    load_programs_from_curated_table,
+    program_gene_availability,
+    score_programs,
 )
 
-GTEX_MATRIX = (
-    PROJECT_ROOT
-    / "data"
-    / "processed"
-    / "gtex_v11_sample_level"
-    / "gtex_v11_matrisome_expression_log2.parquet"
+
+DEFAULT_PROGRAM_TABLE = Path(
+    "results/tables/frozen/combined_nmf_module_annotations_curated_programs.csv"
 )
 
-GTEX_METADATA = (
-    PROJECT_ROOT
-    / "data"
-    / "processed"
-    / "gtex_v11_sample_level"
-    / "gtex_v11_sample_metadata.csv"
+DEFAULT_GTEX_MATRIX = Path(
+    "data/processed/gtex_v11_sample_level/gtex_v11_matrisome_expression_log2.parquet"
 )
 
-GTEX_MEAN_SCORE_WITH_METADATA = (
-    PROJECT_ROOT
-    / "data"
-    / "processed"
-    / "gtex_v11_sample_level"
-    / "gtex_v11_program_scores_zscore_mean_with_metadata.csv"
+DEFAULT_GTEX_METADATA = Path(
+    "data/processed/gtex_v11_sample_level/gtex_v11_sample_metadata.csv"
 )
 
-TABULA_MATRIX = (
-    PROJECT_ROOT
-    / "data"
-    / "processed"
-    / "tabula_sapiens"
-    / "tabula_sapiens_pseudobulk_log_cpm.csv.gz"
+DEFAULT_GTEX_MEAN_SCORE_WITH_METADATA = Path(
+    "data/processed/gtex_v11_sample_level/gtex_v11_program_scores_zscore_mean_with_metadata.csv"
 )
 
-TABULA_METADATA = (
-    PROJECT_ROOT
-    / "data"
-    / "processed"
-    / "tabula_sapiens"
-    / "tabula_sapiens_pseudobulk_metadata.csv"
+DEFAULT_TABULA_MATRIX = Path(
+    "data/processed/tabula_sapiens/tabula_sapiens_pseudobulk_log_cpm.csv.gz"
 )
 
-TABULA_MEAN_SCORE_WITH_METADATA = (
-    PROJECT_ROOT
-    / "data"
-    / "processed"
-    / "tabula_sapiens"
-    / "tabula_sapiens_ecm_program_scores_zscore_with_metadata.csv"
+DEFAULT_TABULA_METADATA = Path(
+    "data/processed/tabula_sapiens/tabula_sapiens_pseudobulk_metadata.csv"
 )
 
-OUTPUT_DIR = PROJECT_ROOT / "outputs" / "rank_based_ecm_program_scoring"
-TABLE_DIR = OUTPUT_DIR / "tables"
-HTML_DIR = OUTPUT_DIR / "figures" / "html"
-PNG_DIR = OUTPUT_DIR / "figures" / "png"
-REPORT_DIR = OUTPUT_DIR / "reports"
+DEFAULT_TABULA_MEAN_SCORE_WITH_METADATA = Path(
+    "data/processed/tabula_sapiens/tabula_sapiens_ecm_program_scores_zscore_with_metadata.csv"
+)
+
+DEFAULT_OUTPUT_DIR = Path("results/rank_based_scoring")
 
 
 PROGRAM_ORDER = [
@@ -88,14 +61,28 @@ PROGRAM_ORDER = [
 ]
 
 
-def ensure_dirs() -> None:
-    for folder in [TABLE_DIR, HTML_DIR, PNG_DIR, REPORT_DIR]:
+def ensure_dirs(output_dir: Path) -> tuple[Path, Path, Path, Path]:
+    table_dir = output_dir / "tables"
+    html_dir = output_dir / "figures" / "html"
+    png_dir = output_dir / "figures" / "png"
+    report_dir = output_dir / "reports"
+
+    for folder in [table_dir, html_dir, png_dir, report_dir]:
         folder.mkdir(parents=True, exist_ok=True)
 
+    return table_dir, html_dir, png_dir, report_dir
 
-def save_figure(fig: go.Figure, name: str, width: int = 1350, height: int = 850) -> None:
-    html_path = HTML_DIR / f"{name}.html"
-    png_path = PNG_DIR / f"{name}.png"
+
+def save_figure(
+    fig: go.Figure,
+    name: str,
+    html_dir: Path,
+    png_dir: Path,
+    width: int = 1350,
+    height: int = 850,
+) -> None:
+    html_path = html_dir / f"{name}.html"
+    png_path = png_dir / f"{name}.png"
 
     fig.update_layout(width=width, height=height)
     fig.write_html(str(html_path), include_plotlyjs="cdn", full_html=True)
@@ -109,237 +96,105 @@ def save_figure(fig: go.Figure, name: str, width: int = 1350, height: int = 850)
     print(f"[SAVED] {html_path}")
 
 
-def normalize_gene(gene: str) -> str:
-    return str(gene).strip().upper()
-
-
-def split_comma_list(value: str) -> List[str]:
-    if pd.isna(value):
-        return []
-
-    return [
-        normalize_gene(item)
-        for item in str(value).split(",")
-        if item.strip()
-    ]
-
-
-def zscore_columns(df: pd.DataFrame) -> pd.DataFrame:
-    x = df.copy().astype(float)
-
-    means = x.mean(axis=0)
-    stds = x.std(axis=0, ddof=0).replace(0, np.nan)
-
-    z = x.sub(means, axis=1).div(stds, axis=1)
-    z = z.fillna(0.0)
-
-    return z
-
-
-def load_curated_program_gene_sets(path: Path) -> pd.DataFrame:
-    if not path.exists():
-        raise FileNotFoundError(f"Missing curated program file: {path}")
-
-    df = pd.read_csv(path)
-
-    required = [
-        "feature_set",
-        "component",
-        "ecm_program_curated",
-        "top_genes",
-    ]
-
-    missing = [col for col in required if col not in df.columns]
-    if missing:
-        raise ValueError(f"Curated program file is missing columns: {missing}")
-
-    records = []
-
-    for program, group in df.groupby("ecm_program_curated"):
-        genes: List[str] = []
-        modules: List[str] = []
-
-        for row in group.itertuples():
-            genes.extend(split_comma_list(row.top_genes))
-            modules.append(f"{row.feature_set}:{row.component}")
-
-        unique_genes = sorted(set(genes))
-
-        records.append(
-            {
-                "ecm_program": program,
-                "n_reference_modules": len(modules),
-                "reference_modules": "; ".join(modules),
-                "n_program_genes": len(unique_genes),
-                "program_genes": ", ".join(unique_genes),
-            }
-        )
-
-    program_df = pd.DataFrame(records)
-
-    program_df["ecm_program"] = pd.Categorical(
-        program_df["ecm_program"],
-        categories=PROGRAM_ORDER,
-        ordered=True,
-    )
-
-    program_df = program_df.sort_values("ecm_program")
-
-    return program_df
-
-
 def load_matrix(path: Path, dataset_name: str) -> pd.DataFrame:
     if not path.exists():
-        raise FileNotFoundError(f"Missing {dataset_name} matrix: {path}")
+        raise FileNotFoundError(
+            f"Missing {dataset_name} matrix:\n{path}\n\n"
+            "If you are running from the clean repo, copy or symlink the processed data "
+            "from the old experimental project into the matching data/processed folder."
+        )
 
     print(f"[INFO] Loading {dataset_name} matrix: {path}")
 
     if path.suffix == ".parquet":
-        df = pd.read_parquet(path)
+        matrix = pd.read_parquet(path)
     else:
-        df = pd.read_csv(path, index_col=0)
+        matrix = pd.read_csv(path, index_col=0)
 
-    df.index = df.index.astype(str)
-    df.columns = [normalize_gene(col) for col in df.columns]
+    matrix.index = matrix.index.astype(str)
+    matrix.columns = [str(col).strip().upper() for col in matrix.columns]
+    matrix = matrix.apply(pd.to_numeric, errors="coerce").fillna(0.0)
 
-    df = df.apply(pd.to_numeric, errors="coerce").fillna(0.0)
+    print(f"[INFO] {dataset_name} matrix shape: {matrix.shape}")
 
-    print(f"[INFO] {dataset_name} matrix shape: {df.shape}")
-
-    return df
+    return matrix
 
 
-def load_metadata(path: Path, id_col: str) -> pd.DataFrame:
+def load_metadata(path: Path, id_col: str, dataset_name: str) -> pd.DataFrame:
     if not path.exists():
-        raise FileNotFoundError(f"Missing metadata file: {path}")
+        raise FileNotFoundError(f"Missing {dataset_name} metadata:\n{path}")
 
-    meta = pd.read_csv(path)
-    meta[id_col] = meta[id_col].astype(str)
+    metadata = pd.read_csv(path)
 
-    return meta
-
-
-def compute_rank_based_scores(
-    matrix: pd.DataFrame,
-    program_df: pd.DataFrame,
-    dataset_name: str,
-) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """
-    Rank all available Matrisome genes within each sample.
-
-    Higher expression gets higher percentile rank.
-
-    rank_percentile_score:
-        mean percentile rank of program genes.
-
-    top10_fraction_score:
-        fraction of program genes among top 10% expressed Matrisome genes.
-
-    top20_fraction_score:
-        fraction of program genes among top 20% expressed Matrisome genes.
-    """
-    available_genes = set(matrix.columns)
-    n_genes_total = matrix.shape[1]
-
-    print(f"[INFO] Computing within-sample ranks for {dataset_name}")
-    ranks = matrix.rank(axis=1, method="average", ascending=True)
-
-    if n_genes_total > 1:
-        percentile = (ranks - 1.0) / (n_genes_total - 1.0)
-    else:
-        percentile = ranks * 0.0
-
-    top10_threshold = matrix.quantile(0.90, axis=1)
-    top20_threshold = matrix.quantile(0.80, axis=1)
-
-    rank_score_df = pd.DataFrame(index=matrix.index)
-    top10_df = pd.DataFrame(index=matrix.index)
-    top20_df = pd.DataFrame(index=matrix.index)
-
-    availability_records = []
-
-    for row in program_df.itertuples():
-        program = str(row.ecm_program)
-        program_genes = set(split_comma_list(row.program_genes))
-
-        available = sorted(program_genes.intersection(available_genes))
-        missing = sorted(program_genes.difference(available_genes))
-
-        availability_records.append(
-            {
-                "dataset": dataset_name,
-                "ecm_program": program,
-                "n_program_genes": len(program_genes),
-                "n_available_genes": len(available),
-                "n_missing_genes": len(missing),
-                "availability_fraction": len(available) / len(program_genes)
-                if program_genes
-                else np.nan,
-                "available_genes": ", ".join(available),
-                "missing_genes": ", ".join(missing),
-            }
+    if id_col not in metadata.columns:
+        raise ValueError(
+            f"Expected ID column '{id_col}' in {path}. "
+            f"Available columns: {metadata.columns.tolist()}"
         )
 
-        if not available:
-            rank_score_df[program] = np.nan
-            top10_df[program] = np.nan
-            top20_df[program] = np.nan
-            continue
+    metadata[id_col] = metadata[id_col].astype(str)
 
-        rank_score_df[program] = percentile[available].mean(axis=1)
-
-        # For each sample, determine whether program genes are above top10/top20 threshold.
-        top10_df[program] = matrix[available].ge(top10_threshold, axis=0).mean(axis=1)
-        top20_df[program] = matrix[available].ge(top20_threshold, axis=0).mean(axis=1)
-
-    rank_score_df.index.name = "sample_id"
-    top10_df.index.name = "sample_id"
-    top20_df.index.name = "sample_id"
-
-    availability_df = pd.DataFrame(availability_records)
-
-    return rank_score_df, top10_df, top20_df, availability_df
+    return metadata
 
 
-def merge_scores_with_metadata(
-    rank_scores: pd.DataFrame,
-    top10_scores: pd.DataFrame,
-    top20_scores: pd.DataFrame,
+def score_dataset(
+    matrix: pd.DataFrame,
     metadata: pd.DataFrame,
     id_col: str,
-) -> pd.DataFrame:
-    rank = rank_scores.reset_index().rename(columns={"sample_id": id_col})
-    top10 = top10_scores.reset_index().rename(columns={"sample_id": id_col})
-    top20 = top20_scores.reset_index().rename(columns={"sample_id": id_col})
+    programs: List[ProgramGeneSet],
+    dataset_name: str,
+) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, pd.DataFrame]]:
+    """
+    Compute all rank-based and mean-based program scores for one dataset.
+    """
+    methods = [
+        "mean",
+        "zscore_mean",
+        "rank_percentile",
+        "top10_fraction",
+        "top20_fraction",
+    ]
 
-    rank = rank.rename(
-        columns={program: f"{program}__rank_percentile" for program in PROGRAM_ORDER if program in rank.columns}
-    )
-    top10 = top10.rename(
-        columns={program: f"{program}__top10_fraction" for program in PROGRAM_ORDER if program in top10.columns}
-    )
-    top20 = top20.rename(
-        columns={program: f"{program}__top20_fraction" for program in PROGRAM_ORDER if program in top20.columns}
-    )
+    scores = score_programs(matrix=matrix, programs=programs, methods=methods)
 
-    merged = metadata.merge(rank, on=id_col, how="right")
-    merged = merged.merge(top10, on=id_col, how="left")
-    merged = merged.merge(top20, on=id_col, how="left")
+    availability = program_gene_availability(matrix=matrix, programs=programs)
+    availability.insert(0, "dataset", dataset_name)
 
-    return merged
+    merged = metadata.copy()
+
+    for method, score_df in scores.items():
+        method_scores = score_df.copy()
+        method_scores.index = method_scores.index.astype(str)
+        method_scores = method_scores.reset_index().rename(columns={"index": id_col})
+
+        if id_col not in method_scores.columns:
+            method_scores = method_scores.rename(columns={method_scores.columns[0]: id_col})
+
+        rename_map = {
+            program: f"{program}__{method}"
+            for program in method_scores.columns
+            if program != id_col
+        }
+
+        method_scores = method_scores.rename(columns=rename_map)
+        method_scores[id_col] = method_scores[id_col].astype(str)
+
+        merged = merged.merge(method_scores, on=id_col, how="right")
+
+    return merged, availability, scores
 
 
 def summarize_by_group(
     scores_with_meta: pd.DataFrame,
     group_cols: List[str],
     id_col: str,
-    score_suffix: str,
     dataset_name: str,
+    score_method: str = "rank_percentile",
 ) -> pd.DataFrame:
     score_cols = [
-        f"{program}__{score_suffix}"
+        f"{program}__{score_method}"
         for program in PROGRAM_ORDER
-        if f"{program}__{score_suffix}" in scores_with_meta.columns
+        if f"{program}__{score_method}" in scores_with_meta.columns
     ]
 
     records = []
@@ -352,14 +207,17 @@ def summarize_by_group(
 
         n_units = group[id_col].nunique()
 
-        n_donors = group["donor"].nunique() if "donor" in group.columns else np.nan
         if "subject_id" in group.columns:
             n_donors = group["subject_id"].nunique()
+        elif "donor" in group.columns:
+            n_donors = group["donor"].nunique()
+        else:
+            n_donors = np.nan
 
         n_cells = group["n_cells"].sum() if "n_cells" in group.columns else np.nan
 
         for col in score_cols:
-            program = col.replace(f"__{score_suffix}", "")
+            program = col.replace(f"__{score_method}", "")
 
             values = pd.to_numeric(group[col], errors="coerce").dropna()
 
@@ -371,7 +229,7 @@ def summarize_by_group(
                     "dataset": dataset_name,
                     **group_info,
                     "ecm_program": program,
-                    "score_type": score_suffix,
+                    "score_type": score_method,
                     "n_units": n_units,
                     "n_donors": n_donors,
                     "n_cells": n_cells,
@@ -386,23 +244,34 @@ def summarize_by_group(
     return pd.DataFrame(records)
 
 
-def compare_with_mean_scores(
+def compare_rank_with_existing_mean_scores(
     rank_scores_with_meta: pd.DataFrame,
     mean_scores_with_meta_path: Path,
     id_col: str,
     dataset_name: str,
 ) -> pd.DataFrame:
+    """
+    Compare new rank-percentile scores to old zscore-mean scores.
+
+    Old score files contain columns named by program, without suffix.
+    New score columns are named '{program}__rank_percentile'.
+    """
     if not mean_scores_with_meta_path.exists():
         print(f"[WARNING] Missing previous mean score file: {mean_scores_with_meta_path}")
         return pd.DataFrame()
 
-    mean_df = pd.read_csv(mean_scores_with_meta_path)
-    mean_df[id_col] = mean_df[id_col].astype(str)
+    old_scores = pd.read_csv(mean_scores_with_meta_path)
 
-    rank_df = rank_scores_with_meta.copy()
-    rank_df[id_col] = rank_df[id_col].astype(str)
+    if id_col not in old_scores.columns:
+        raise ValueError(
+            f"Expected ID column '{id_col}' in old score file: {mean_scores_with_meta_path}"
+        )
 
-    merged = rank_df.merge(mean_df, on=id_col, how="inner", suffixes=("_rank", "_mean"))
+    old_scores[id_col] = old_scores[id_col].astype(str)
+    new_scores = rank_scores_with_meta.copy()
+    new_scores[id_col] = new_scores[id_col].astype(str)
+
+    merged = new_scores.merge(old_scores, on=id_col, how="inner", suffixes=("_rank", "_old"))
 
     records = []
 
@@ -443,12 +312,12 @@ def compare_with_mean_scores(
 
 def make_heatmap_from_summary(
     summary_df: pd.DataFrame,
-    row_col: str,
     column_col: str,
-    dataset_name: str,
     score_type: str,
-    name: str,
     title: str,
+    name: str,
+    html_dir: Path,
+    png_dir: Path,
 ) -> None:
     subset = summary_df[summary_df["score_type"].eq(score_type)].copy()
 
@@ -464,7 +333,7 @@ def make_heatmap_from_summary(
         fill_value=0.0,
     )
 
-    matrix = matrix.loc[[p for p in PROGRAM_ORDER if p in matrix.index]]
+    matrix = matrix.loc[[program for program in PROGRAM_ORDER if program in matrix.index]]
 
     fig = go.Figure(
         data=go.Heatmap(
@@ -488,11 +357,16 @@ def make_heatmap_from_summary(
         xaxis=dict(tickangle=35),
     )
 
-    save_figure(fig, name, width=1450, height=850)
+    save_figure(fig, name=name, html_dir=html_dir, png_dir=png_dir, width=1450, height=850)
 
 
-def plot_correlation_heatmap(correlation_df: pd.DataFrame, dataset_name: str) -> None:
+def plot_rank_mean_correlation_heatmap(
+    correlation_df: pd.DataFrame,
+    html_dir: Path,
+    png_dir: Path,
+) -> None:
     if correlation_df.empty:
+        print("[SKIP] Correlation heatmap, empty correlation table.")
         return
 
     matrix = correlation_df.pivot_table(
@@ -502,12 +376,14 @@ def plot_correlation_heatmap(correlation_df: pd.DataFrame, dataset_name: str) ->
         aggfunc="mean",
     )
 
+    matrix = matrix.loc[[program for program in PROGRAM_ORDER if program in matrix.index]]
+
     fig = go.Figure(
         data=go.Heatmap(
             z=matrix.values,
             x=matrix.columns.tolist(),
             y=matrix.index.tolist(),
-            text=[[f"{v:.2f}" for v in row] for row in matrix.values],
+            text=[[f"{value:.2f}" for value in row] for row in matrix.values],
             texttemplate="%{text}",
             colorscale="RdBu",
             zmid=0,
@@ -526,56 +402,67 @@ def plot_correlation_heatmap(correlation_df: pd.DataFrame, dataset_name: str) ->
         margin=dict(l=310, r=60, t=100, b=100),
     )
 
-    save_figure(fig, "rank_vs_mean_score_spearman_correlation", width=1100, height=760)
+    save_figure(
+        fig,
+        name="rank_vs_mean_score_spearman_correlation",
+        html_dir=html_dir,
+        png_dir=png_dir,
+        width=1150,
+        height=760,
+    )
 
 
-def write_summary_report(
+def write_report(
     gtex_corr: pd.DataFrame,
     tabula_corr: pd.DataFrame,
-    gtex_availability: pd.DataFrame,
-    tabula_availability: pd.DataFrame,
+    report_dir: Path,
 ) -> None:
-    report_path = REPORT_DIR / "rank_based_ecm_program_scoring_summary.md"
+    report_path = report_dir / "rank_based_ecm_program_scoring_summary.md"
 
     lines = []
-
     lines.append("# Rank-Based ECM Program Scoring Robustness Summary\n")
     lines.append("## Purpose\n")
     lines.append(
-        "This analysis tests whether the nine curated ECM programs remain stable when scored using within-sample rank-based scoring rather than mean expression."
+        "This analysis tests whether the nine curated ECM programs remain stable when "
+        "scored using within-sample rank-based scoring rather than mean expression."
     )
 
     lines.append("\n## Scoring definitions\n")
-    lines.append("- **rank_percentile_score**: mean within-sample percentile rank of genes in an ECM program.\n")
-    lines.append("- **top10_fraction_score**: fraction of program genes ranked in the top 10% of Matrisome genes in that sample.\n")
-    lines.append("- **top20_fraction_score**: fraction of program genes ranked in the top 20% of Matrisome genes in that sample.\n")
+    lines.append(
+        "- **rank_percentile_score**: mean within-sample percentile rank of genes in an ECM program."
+    )
+    lines.append(
+        "- **top10_fraction_score**: fraction of program genes ranked in the top 10% of Matrisome genes."
+    )
+    lines.append(
+        "- **top20_fraction_score**: fraction of program genes ranked in the top 20% of Matrisome genes."
+    )
 
     lines.append("\n## GTEx V11 rank-vs-mean correlations\n")
-    if not gtex_corr.empty:
+    if gtex_corr.empty:
+        lines.append("No GTEx V11 correlation table was generated.")
+    else:
         for row in gtex_corr.itertuples():
             lines.append(
-                f"- **{row.ecm_program}**: Spearman r = {row.spearman_r:.3f}, Pearson r = {row.pearson_r:.3f}"
+                f"- **{row.ecm_program}**: "
+                f"Spearman r = {row.spearman_r:.3f}, Pearson r = {row.pearson_r:.3f}"
             )
-    else:
-        lines.append("No GTEx correlation table was generated.\n")
 
     lines.append("\n## Tabula Sapiens rank-vs-mean correlations\n")
-    if not tabula_corr.empty:
+    if tabula_corr.empty:
+        lines.append("No Tabula Sapiens correlation table was generated.")
+    else:
         for row in tabula_corr.itertuples():
             lines.append(
-                f"- **{row.ecm_program}**: Spearman r = {row.spearman_r:.3f}, Pearson r = {row.pearson_r:.3f}"
+                f"- **{row.ecm_program}**: "
+                f"Spearman r = {row.spearman_r:.3f}, Pearson r = {row.pearson_r:.3f}"
             )
-    else:
-        lines.append("No Tabula Sapiens correlation table was generated.\n")
 
     lines.append("\n## Interpretation\n")
     lines.append(
-        "High correlations indicate that ECM program activity is robust to the choice of scoring method. Discrepant programs should be interpreted carefully, as they may depend on absolute expression rather than relative within-sample gene ranking."
-    )
-
-    lines.append("\n## Methodological relevance\n")
-    lines.append(
-        "This robustness analysis is inspired by rank-based gene-set scoring approaches such as UCell, used by MatriSpace for spatial matrisome scoring. It strengthens the framework by showing whether the ECM programs remain stable under a scoring scheme less sensitive to library size and expression scale."
+        "High correlations indicate that ECM program activity is robust to the scoring method. "
+        "Discrepant programs should be interpreted cautiously, as they may depend more strongly "
+        "on absolute expression than on relative within-sample gene ranking."
     )
 
     report_path.write_text("\n".join(lines), encoding="utf-8")
@@ -583,157 +470,202 @@ def write_summary_report(
 
 
 def main() -> None:
-    ensure_dirs()
+    parser = argparse.ArgumentParser()
 
-    program_df = load_curated_program_gene_sets(CURATED_PROGRAM_FILE)
-    program_df.to_csv(TABLE_DIR / "rank_based_reference_ecm_program_gene_sets.csv", index=False)
+    parser.add_argument("--program-table", type=Path, default=DEFAULT_PROGRAM_TABLE)
+    parser.add_argument("--gtex-matrix", type=Path, default=DEFAULT_GTEX_MATRIX)
+    parser.add_argument("--gtex-metadata", type=Path, default=DEFAULT_GTEX_METADATA)
+    parser.add_argument("--gtex-mean-scores", type=Path, default=DEFAULT_GTEX_MEAN_SCORE_WITH_METADATA)
+    parser.add_argument("--tabula-matrix", type=Path, default=DEFAULT_TABULA_MATRIX)
+    parser.add_argument("--tabula-metadata", type=Path, default=DEFAULT_TABULA_METADATA)
+    parser.add_argument("--tabula-mean-scores", type=Path, default=DEFAULT_TABULA_MEAN_SCORE_WITH_METADATA)
+    parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
+
+    args = parser.parse_args()
+
+    table_dir, html_dir, png_dir, report_dir = ensure_dirs(args.output_dir)
+
+    programs = load_programs_from_curated_table(
+        str(args.program_table),
+        program_col="ecm_program_curated",
+        genes_col="top_genes",
+    )
+
+    # Keep program order if possible.
+    program_lookup = {program.name: program for program in programs}
+    programs = [program_lookup[name] for name in PROGRAM_ORDER if name in program_lookup]
+
+    pd.DataFrame(
+        [
+            {
+                "ecm_program": program.name,
+                "n_genes": program.n_genes,
+                "genes": ", ".join(program.genes),
+            }
+            for program in programs
+        ]
+    ).to_csv(table_dir / "rank_based_reference_ecm_program_gene_sets.csv", index=False)
 
     # GTEx V11
-    gtex_matrix = load_matrix(GTEX_MATRIX, dataset_name="gtex_v11")
-    gtex_metadata = load_metadata(GTEX_METADATA, id_col="sample_id")
+    gtex_matrix = load_matrix(args.gtex_matrix, dataset_name="gtex_v11")
+    gtex_metadata = load_metadata(args.gtex_metadata, id_col="sample_id", dataset_name="gtex_v11")
 
-    gtex_rank, gtex_top10, gtex_top20, gtex_availability = compute_rank_based_scores(
+    gtex_scores, gtex_availability, _ = score_dataset(
         matrix=gtex_matrix,
-        program_df=program_df,
-        dataset_name="gtex_v11",
-    )
-
-    gtex_scores_meta = merge_scores_with_metadata(
-        rank_scores=gtex_rank,
-        top10_scores=gtex_top10,
-        top20_scores=gtex_top20,
         metadata=gtex_metadata,
         id_col="sample_id",
+        programs=programs,
+        dataset_name="gtex_v11",
     )
 
-    gtex_scores_meta.to_csv(TABLE_DIR / "gtex_v11_rank_based_program_scores_with_metadata.csv", index=False)
-    gtex_availability.to_csv(TABLE_DIR / "gtex_v11_rank_based_program_gene_availability.csv", index=False)
+    gtex_scores.to_csv(table_dir / "gtex_v11_rank_based_program_scores_with_metadata.csv", index=False)
+    gtex_availability.to_csv(table_dir / "gtex_v11_rank_based_program_gene_availability.csv", index=False)
 
     gtex_tissue_summary = summarize_by_group(
-        scores_with_meta=gtex_scores_meta,
+        scores_with_meta=gtex_scores,
         group_cols=["tissue"],
         id_col="sample_id",
-        score_suffix="rank_percentile",
         dataset_name="gtex_v11",
+        score_method="rank_percentile",
     )
 
     gtex_tissue_detail_summary = summarize_by_group(
-        scores_with_meta=gtex_scores_meta,
+        scores_with_meta=gtex_scores,
         group_cols=["tissue", "tissue_detail"],
         id_col="sample_id",
-        score_suffix="rank_percentile",
         dataset_name="gtex_v11",
+        score_method="rank_percentile",
     )
 
-    gtex_tissue_summary.to_csv(TABLE_DIR / "gtex_v11_rank_based_tissue_summary.csv", index=False)
-    gtex_tissue_detail_summary.to_csv(TABLE_DIR / "gtex_v11_rank_based_tissue_detail_summary.csv", index=False)
+    gtex_tissue_summary.to_csv(table_dir / "gtex_v11_rank_based_tissue_summary.csv", index=False)
+    gtex_tissue_detail_summary.to_csv(table_dir / "gtex_v11_rank_based_tissue_detail_summary.csv", index=False)
 
-    gtex_corr = compare_with_mean_scores(
-        rank_scores_with_meta=gtex_scores_meta,
-        mean_scores_with_meta_path=GTEX_MEAN_SCORE_WITH_METADATA,
+    gtex_corr = compare_rank_with_existing_mean_scores(
+        rank_scores_with_meta=gtex_scores,
+        mean_scores_with_meta_path=args.gtex_mean_scores,
         id_col="sample_id",
         dataset_name="gtex_v11",
     )
-
-    gtex_corr.to_csv(TABLE_DIR / "gtex_v11_rank_vs_mean_score_correlation.csv", index=False)
+    gtex_corr.to_csv(table_dir / "gtex_v11_rank_vs_mean_score_correlation.csv", index=False)
 
     make_heatmap_from_summary(
         summary_df=gtex_tissue_summary,
-        row_col="ecm_program",
         column_col="tissue",
-        dataset_name="gtex_v11",
         score_type="rank_percentile",
-        name="gtex_v11_rank_based_tissue_program_heatmap",
         title="GTEx V11 rank-based ECM program scores by tissue",
+        name="gtex_v11_rank_based_tissue_program_heatmap",
+        html_dir=html_dir,
+        png_dir=png_dir,
     )
 
     # Tabula Sapiens
-    tabula_matrix = load_matrix(TABULA_MATRIX, dataset_name="tabula_sapiens")
-    tabula_metadata = load_metadata(TABULA_METADATA, id_col="pseudobulk_id")
-
-    tabula_rank, tabula_top10, tabula_top20, tabula_availability = compute_rank_based_scores(
-        matrix=tabula_matrix,
-        program_df=program_df,
+    tabula_matrix = load_matrix(args.tabula_matrix, dataset_name="tabula_sapiens")
+    tabula_metadata = load_metadata(
+        args.tabula_metadata,
+        id_col="pseudobulk_id",
         dataset_name="tabula_sapiens",
     )
 
-    tabula_scores_meta = merge_scores_with_metadata(
-        rank_scores=tabula_rank,
-        top10_scores=tabula_top10,
-        top20_scores=tabula_top20,
+    tabula_scores, tabula_availability, _ = score_dataset(
+        matrix=tabula_matrix,
         metadata=tabula_metadata,
         id_col="pseudobulk_id",
+        programs=programs,
+        dataset_name="tabula_sapiens",
     )
 
-    tabula_scores_meta.to_csv(TABLE_DIR / "tabula_sapiens_rank_based_program_scores_with_metadata.csv", index=False)
-    tabula_availability.to_csv(TABLE_DIR / "tabula_sapiens_rank_based_program_gene_availability.csv", index=False)
+    tabula_scores.to_csv(
+        table_dir / "tabula_sapiens_rank_based_program_scores_with_metadata.csv",
+        index=False,
+    )
+    tabula_availability.to_csv(
+        table_dir / "tabula_sapiens_rank_based_program_gene_availability.csv",
+        index=False,
+    )
 
     tabula_compartment_summary = summarize_by_group(
-        scores_with_meta=tabula_scores_meta,
+        scores_with_meta=tabula_scores,
         group_cols=["method", "compartment"],
         id_col="pseudobulk_id",
-        score_suffix="rank_percentile",
         dataset_name="tabula_sapiens",
+        score_method="rank_percentile",
     )
 
     tabula_celltype_summary = summarize_by_group(
-        scores_with_meta=tabula_scores_meta,
+        scores_with_meta=tabula_scores,
         group_cols=["method", "cell_type", "compartment"],
         id_col="pseudobulk_id",
-        score_suffix="rank_percentile",
         dataset_name="tabula_sapiens",
+        score_method="rank_percentile",
     )
 
     tabula_organ_celltype_summary = summarize_by_group(
-        scores_with_meta=tabula_scores_meta,
+        scores_with_meta=tabula_scores,
         group_cols=["method", "organ", "cell_type", "compartment"],
         id_col="pseudobulk_id",
-        score_suffix="rank_percentile",
         dataset_name="tabula_sapiens",
+        score_method="rank_percentile",
     )
 
-    tabula_compartment_summary.to_csv(TABLE_DIR / "tabula_sapiens_rank_based_compartment_summary.csv", index=False)
-    tabula_celltype_summary.to_csv(TABLE_DIR / "tabula_sapiens_rank_based_celltype_summary.csv", index=False)
-    tabula_organ_celltype_summary.to_csv(TABLE_DIR / "tabula_sapiens_rank_based_organ_celltype_summary.csv", index=False)
+    tabula_compartment_summary.to_csv(
+        table_dir / "tabula_sapiens_rank_based_compartment_summary.csv",
+        index=False,
+    )
+    tabula_celltype_summary.to_csv(
+        table_dir / "tabula_sapiens_rank_based_celltype_summary.csv",
+        index=False,
+    )
+    tabula_organ_celltype_summary.to_csv(
+        table_dir / "tabula_sapiens_rank_based_organ_celltype_summary.csv",
+        index=False,
+    )
 
-    tabula_corr = compare_with_mean_scores(
-        rank_scores_with_meta=tabula_scores_meta,
-        mean_scores_with_meta_path=TABULA_MEAN_SCORE_WITH_METADATA,
+    tabula_corr = compare_rank_with_existing_mean_scores(
+        rank_scores_with_meta=tabula_scores,
+        mean_scores_with_meta_path=args.tabula_mean_scores,
         id_col="pseudobulk_id",
         dataset_name="tabula_sapiens",
     )
-
-    tabula_corr.to_csv(TABLE_DIR / "tabula_sapiens_rank_vs_mean_score_correlation.csv", index=False)
+    tabula_corr.to_csv(
+        table_dir / "tabula_sapiens_rank_vs_mean_score_correlation.csv",
+        index=False,
+    )
 
     for method in sorted(tabula_compartment_summary["method"].dropna().astype(str).unique()):
-        method_summary = tabula_compartment_summary[tabula_compartment_summary["method"].astype(str).eq(method)]
+        method_summary = tabula_compartment_summary[
+            tabula_compartment_summary["method"].astype(str).eq(method)
+        ]
 
         make_heatmap_from_summary(
             summary_df=method_summary,
-            row_col="ecm_program",
             column_col="compartment",
-            dataset_name="tabula_sapiens",
             score_type="rank_percentile",
-            name=f"tabula_sapiens_rank_based_compartment_heatmap_{method}",
             title=f"Tabula Sapiens rank-based ECM program scores by compartment<br><sup>{method}</sup>",
+            name=f"tabula_sapiens_rank_based_compartment_heatmap_{method}",
+            html_dir=html_dir,
+            png_dir=png_dir,
         )
 
     all_corr = pd.concat([gtex_corr, tabula_corr], ignore_index=True)
-    all_corr.to_csv(TABLE_DIR / "rank_based_all_rank_vs_mean_score_correlation.csv", index=False)
-    plot_correlation_heatmap(all_corr, dataset_name="combined")
+    all_corr.to_csv(table_dir / "rank_based_all_rank_vs_mean_score_correlation.csv", index=False)
 
-    write_summary_report(
+    plot_rank_mean_correlation_heatmap(
+        correlation_df=all_corr,
+        html_dir=html_dir,
+        png_dir=png_dir,
+    )
+
+    write_report(
         gtex_corr=gtex_corr,
         tabula_corr=tabula_corr,
-        gtex_availability=gtex_availability,
-        tabula_availability=tabula_availability,
+        report_dir=report_dir,
     )
 
     print("\n[DONE]")
-    print(f"Output folder: {OUTPUT_DIR}")
-    print(f"Tables: {TABLE_DIR}")
-    print(f"Figures HTML: {HTML_DIR}")
-    print(f"Figures PNG: {PNG_DIR}")
+    print(f"Output folder: {args.output_dir}")
+    print(f"Tables:        {table_dir}")
+    print(f"HTML figures:  {html_dir}")
+    print(f"PNG figures:   {png_dir}")
 
 
 if __name__ == "__main__":
