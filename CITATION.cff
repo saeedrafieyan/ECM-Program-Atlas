@@ -1,0 +1,8 @@
+cff-version: 1.2.0
+title: ECM Program Atlas
+message: If you use this repository, please cite the associated manuscript.
+authors:
+  - family-names: Rafieyan Boroujeni
+    given-names: Saeed
+version: 0.1.0
+date-released: 2026-05-05

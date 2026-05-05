@@ -1,0 +1,11 @@
+[project]
+name = "ecm-program-atlas"
+version = "0.1.0"
+description = "A reproducible Matrisome-derived ECM representation framework."
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100

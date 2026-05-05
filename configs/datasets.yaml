@@ -1,0 +1,23 @@
+datasets:
+  hpa_tissue_consensus:
+    path: data/raw/hpa/rna_tissue_consensus.tsv.zip
+    sample_col: Tissue
+    expression_col: nTPM
+
+  matrisome_human:
+    path: data/raw/matrisome/human_matrisome.xlsx
+
+  matrisomedb_human:
+    path: data/raw/matrisomedb/matrisomedb_human_export.tsv
+
+  gtex_v11_gene_tpm:
+    path: data/raw/gtex_v11_sample_level/GTEx_Analysis_2025-08-22_v11_RNASeQCv2.4.3_gene_tpm.parquet
+
+  gtex_v11_sample_attributes:
+    path: data/raw/gtex_v11_sample_level/GTEx_Analysis_v11_Annotations_SampleAttributesDS.txt
+
+  gtex_v11_subject_phenotypes:
+    path: data/raw/gtex_v11_sample_level/GTEx_Analysis_v11_Annotations_SubjectPhenotypesDS.txt
+
+  tabula_sapiens:
+    path: data/raw/tabula_sapiens/TabulaSapiens.h5ad

@@ -1,0 +1,14 @@
+classification:
+  group_col: subject_id
+  n_splits: 5
+  min_samples_per_class: 100
+  features:
+    - Vascular/stromal/interstitial ECM
+    - Epithelial/mucosal basement membrane ECM
+    - CNS/neural ECM
+    - Retinal/sensory ECM
+    - Immune/lymphoid remodeling ECM
+    - Stromal remodeling ECM
+    - Renal/endothelial basement membrane ECM
+    - Hepatic/plasma-associated ECM
+    - Reproductive-specialized ECM

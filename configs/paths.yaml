@@ -1,0 +1,14 @@
+project:
+  name: ecm-program-atlas
+
+data:
+  raw: data/raw
+  interim: data/interim
+  processed: data/processed
+  external: data/external
+
+results:
+  tables: results/tables
+  figures_html: results/figures/html
+  figures_png: results/figures/png
+  reports: results/reports

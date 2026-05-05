@@ -1,0 +1,65 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+.env
+.env.*
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data
+data/raw/*
+data/interim/*
+data/processed/*
+data/external/*
+!data/raw/.gitkeep
+!data/interim/.gitkeep
+!data/processed/.gitkeep
+!data/external/.gitkeep
+
+# Results
+results/figures/html/*
+results/figures/png/*
+results/tables/*
+results/reports/*
+!results/figures/html/.gitkeep
+!results/figures/png/.gitkeep
+!results/tables/.gitkeep
+!results/reports/.gitkeep
+
+# Large files
+*.h5ad
+*.h5
+*.hdf5
+*.parquet
+*.gct
+*.gct.gz
+*.csv.gz
+*.tsv.gz
+*.zip
+*.tar
+*.tar.gz
+*.pkl
+*.joblib
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+logs/
+*.log
