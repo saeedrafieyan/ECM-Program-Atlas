@@ -28,3 +28,14 @@ Large datasets are not tracked in Git. Download instructions are provided in `sc
 ## Reproducibility
 
 Run the pipeline scripts in the `pipelines/` folder in numerical order.
+
+## Repository status
+
+This repository is the cleaned and reproducible version of the ECM Program Atlas project. The original exploratory workspace is not included. Large raw and processed datasets are excluded from Git and must be downloaded separately using the instructions in `scripts/download_instructions.md`.
+
+Current migrated components include:
+- validated pipeline scripts
+- curated ECM program annotations
+- frozen summary tables
+- frozen analysis reports
+- manuscript planning documents
