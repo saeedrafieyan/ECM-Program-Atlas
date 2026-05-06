@@ -1,0 +1,13 @@
+dataset,source,local_expected_path,used_for,tracked_in_git,reason_not_tracked
+Human Matrisome annotations,Matrisome Project,data/raw/matrisome/human_matrisome.xlsx,Defines ECM/matrisome gene universe and categories.,No,External data file.
+HPA tissue consensus RNA,Human Protein Atlas,data/raw/hpa/rna_tissue_consensus.tsv.zip,Reference tissue-level ECM matrix and initial program discovery.,No,External data file.
+HPA tissue RNA,Human Protein Atlas,data/raw/hpa/rna_tissue_hpa.tsv.zip,External transcriptomic reproducibility.,No,External data file.
+GTEx tissue RNA,Human Protein Atlas / GTEx-derived,data/raw/hpa/rna_tissue_gtex.tsv.zip,External transcriptomic reproducibility.,No,External data file.
+GTEx tissue-detail RNA,Human Protein Atlas / GTEx-derived,data/raw/hpa/rna_tissue_detail_gtex.tsv.zip,External transcriptomic reproducibility with finer tissue labels.,No,External data file.
+HPA brain RNA,Human Protein Atlas,data/raw/hpa/rna_brain_hpa.tsv.zip,Brain-region ECM program reproducibility.,No,External data file.
+HPA single-cell-type RNA,Human Protein Atlas,data/raw/hpa/rna_single_cell_type.tsv.zip,Cell-type-level expression validation.,No,External data file.
+MatrisomeDB human export,MatrisomeDB,data/raw/matrisomedb/matrisomedb_human_export.tsv,Protein-level ECM support and NSAF abundance validation.,No,External exported data file.
+GTEx V11 sample-level gene TPM,GTEx Portal,data/raw/gtex_v11_sample_level/GTEx_Analysis_2025-08-22_v11_RNASeQCv2.4.3_gene_tpm.parquet,Donor-level ECM program scoring and classification.,No,Large external file.
+GTEx V11 sample attributes,GTEx Portal,data/raw/gtex_v11_sample_level/GTEx_Analysis_v11_Annotations_SampleAttributesDS.txt,Sample-to-tissue metadata.,No,External metadata file.
+GTEx V11 subject phenotypes,GTEx Portal,data/raw/gtex_v11_sample_level/GTEx_Analysis_v11_Annotations_SubjectPhenotypesDS.txt,Donor-level metadata and grouped cross-validation.,No,External metadata file.
+Tabula Sapiens h5ad,Tabula Sapiens,data/raw/tabula_sapiens/TabulaSapiens.h5ad,Donor × organ × cell-type pseudobulk ECM source validation.,No,Large external single-cell file.

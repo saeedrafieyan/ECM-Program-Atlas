@@ -1,0 +1,7 @@
+output,description,recommended_location
+combined_nmf_module_annotations_curated_programs.csv,Curated NMF module annotations and ECM program labels.,results/tables/frozen/
+nmf_rank_stability_summary.md,NMF rank and stability analysis report.,results/revision_nmf_stability/reports/
+r2_representation_control_summary.md,Representation control benchmark report.,results/revision_classification_controls/reports/
+r3_matrisomedb_null_abundance_summary.md,MatrisomeDB null and abundance validation report.,results/revision_matrisomedb_null_abundance/reports/
+rank_based_ecm_program_scoring_summary.md,Rank-based scoring robustness report.,results/rank_based_scoring/reports/
+route_b_final_summary.md,Tabula Sapiens cell-source validation report.,results/reports/frozen/
