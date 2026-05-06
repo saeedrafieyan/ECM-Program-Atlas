@@ -2,7 +2,7 @@
 
 All analysis code is available at:
 
-[GitHub repository URL to be added]
+https://github.com/saeedrafieyan/ECM-Program-Atlas
 
 Large raw datasets are not distributed in this repository due to file size and third-party data-use restrictions. The repository provides:
 
