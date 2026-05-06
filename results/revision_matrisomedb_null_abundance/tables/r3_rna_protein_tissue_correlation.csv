@@ -1,0 +1,37 @@
+condition_group,matrix_name,ecm_program,n_common_tissues,common_tissues,spearman_r,spearman_p,pearson_r,pearson_p
+all_samples,mean_log_nsaf,CNS/neural ECM,11,Blood Vessel; Breast; Colon; Fallopian Tube; Kidney; Liver; Lung; Ovary; Prostate; Skin; Stomach,-0.4909090909090909,0.12520440713849548,-0.27492529726062387,0.4132457708371292
+all_samples,mean_log_nsaf,Epithelial/mucosal basement membrane ECM,11,Blood Vessel; Breast; Colon; Fallopian Tube; Kidney; Liver; Lung; Ovary; Prostate; Skin; Stomach,-0.15454545454545454,0.6500339654975799,0.06835177674332416,0.841727110663364
+all_samples,mean_log_nsaf,Hepatic/plasma-associated ECM,11,Blood Vessel; Breast; Colon; Fallopian Tube; Kidney; Liver; Lung; Ovary; Prostate; Skin; Stomach,-0.15454545454545454,0.6500339654975799,-0.21978194680606267,0.5161114900545869
+all_samples,mean_log_nsaf,Immune/lymphoid remodeling ECM,11,Blood Vessel; Breast; Colon; Fallopian Tube; Kidney; Liver; Lung; Ovary; Prostate; Skin; Stomach,0.14545454545454548,0.6695786456420787,0.2068634836705571,0.5416632792315982
+all_samples,mean_log_nsaf,Renal/endothelial basement membrane ECM,11,Blood Vessel; Breast; Colon; Fallopian Tube; Kidney; Liver; Lung; Ovary; Prostate; Skin; Stomach,-0.14545454545454548,0.6695786456420787,-0.10241711092477121,0.7644466517409224
+all_samples,mean_log_nsaf,Reproductive-specialized ECM,11,Blood Vessel; Breast; Colon; Fallopian Tube; Kidney; Liver; Lung; Ovary; Prostate; Skin; Stomach,0.3181818181818182,0.34029761418190335,0.36055341040798466,0.27602649171475613
+all_samples,mean_log_nsaf,Retinal/sensory ECM,11,Blood Vessel; Breast; Colon; Fallopian Tube; Kidney; Liver; Lung; Ovary; Prostate; Skin; Stomach,-0.3181818181818182,0.34029761418190335,0.0873483552824007,0.7984346300291006
+all_samples,mean_log_nsaf,Stromal remodeling ECM,11,Blood Vessel; Breast; Colon; Fallopian Tube; Kidney; Liver; Lung; Ovary; Prostate; Skin; Stomach,0.20909090909090913,0.5372209352113227,0.19213255107939964,0.5714139258341094
+all_samples,mean_log_nsaf,Vascular/stromal/interstitial ECM,11,Blood Vessel; Breast; Colon; Fallopian Tube; Kidney; Liver; Lung; Ovary; Prostate; Skin; Stomach,0.24545454545454545,0.4669223669820161,0.43265788338504974,0.18381295932787142
+normal_like,mean_log_nsaf,CNS/neural ECM,5,Blood Vessel; Breast; Liver; Prostate; Stomach,-0.49999999999999994,0.3910022189557703,-0.2452637297969913,0.6908802209540086
+normal_like,mean_log_nsaf,Epithelial/mucosal basement membrane ECM,5,Blood Vessel; Breast; Liver; Prostate; Stomach,0.19999999999999998,0.7470600781046621,0.31494182833197265,0.6057349395065336
+normal_like,mean_log_nsaf,Hepatic/plasma-associated ECM,5,Blood Vessel; Breast; Liver; Prostate; Stomach,-0.19999999999999998,0.7470600781046621,-0.07243273266051532,0.907856486432531
+normal_like,mean_log_nsaf,Immune/lymphoid remodeling ECM,5,Blood Vessel; Breast; Liver; Prostate; Stomach,0.19999999999999998,0.7470600781046621,0.35166813768884453,0.5616505461653978
+normal_like,mean_log_nsaf,Renal/endothelial basement membrane ECM,5,Blood Vessel; Breast; Liver; Prostate; Stomach,0.09999999999999999,0.8728885715695384,0.032582208444354374,0.958522384996837
+normal_like,mean_log_nsaf,Reproductive-specialized ECM,5,Blood Vessel; Breast; Liver; Prostate; Stomach,0.6,0.28475697986529386,0.579202022245091,0.30614448073758727
+normal_like,mean_log_nsaf,Retinal/sensory ECM,5,Blood Vessel; Breast; Liver; Prostate; Stomach,-0.49999999999999994,0.3910022189557703,-0.1971371788332945,0.7506325498562153
+normal_like,mean_log_nsaf,Stromal remodeling ECM,5,Blood Vessel; Breast; Liver; Prostate; Stomach,0.39999999999999997,0.5046315754686912,0.13371569970121042,0.8302566009922835
+normal_like,mean_log_nsaf,Vascular/stromal/interstitial ECM,5,Blood Vessel; Breast; Liver; Prostate; Stomach,0.39999999999999997,0.5046315754686912,0.447735406084449,0.44959069409958524
+disease_like,mean_log_nsaf,CNS/neural ECM,8,Blood Vessel; Breast; Colon; Liver; Ovary; Prostate; Skin; Stomach,0.09523809523809526,0.8225054302036114,-0.0039177457407386365,0.9926543019013042
+disease_like,mean_log_nsaf,Epithelial/mucosal basement membrane ECM,8,Blood Vessel; Breast; Colon; Liver; Ovary; Prostate; Skin; Stomach,0.11904761904761905,0.7788857260523796,0.500951405040818,0.20602908816185872
+disease_like,mean_log_nsaf,Hepatic/plasma-associated ECM,8,Blood Vessel; Breast; Colon; Liver; Ovary; Prostate; Skin; Stomach,-0.5476190476190477,0.16002564253889653,-0.5891717496497351,0.124325049269012
+disease_like,mean_log_nsaf,Immune/lymphoid remodeling ECM,8,Blood Vessel; Breast; Colon; Liver; Ovary; Prostate; Skin; Stomach,0.2380952380952381,0.5701563208157683,0.4788761850608558,0.22993463355500504
+disease_like,mean_log_nsaf,Renal/endothelial basement membrane ECM,8,Blood Vessel; Breast; Colon; Liver; Ovary; Prostate; Skin; Stomach,-0.14285714285714288,0.735764859879812,0.08288374977606176,0.8453032371202396
+disease_like,mean_log_nsaf,Reproductive-specialized ECM,8,Blood Vessel; Breast; Colon; Liver; Ovary; Prostate; Skin; Stomach,0.30952380952380953,0.4556448907375822,0.38804354170893235,0.34215739375294174
+disease_like,mean_log_nsaf,Retinal/sensory ECM,8,Blood Vessel; Breast; Colon; Liver; Ovary; Prostate; Skin; Stomach,0.07142857142857144,0.8665262706759088,0.26638513618419246,0.5236535624779692
+disease_like,mean_log_nsaf,Stromal remodeling ECM,8,Blood Vessel; Breast; Colon; Liver; Ovary; Prostate; Skin; Stomach,0.30952380952380953,0.4556448907375822,0.45835269626714326,0.25336993075919545
+disease_like,mean_log_nsaf,Vascular/stromal/interstitial ECM,8,Blood Vessel; Breast; Colon; Liver; Ovary; Prostate; Skin; Stomach,0.5476190476190477,0.16002564253889653,0.6276467869243372,0.09570514771762642
+uncertain,mean_log_nsaf,CNS/neural ECM,6,Blood Vessel; Fallopian Tube; Kidney; Lung; Ovary; Skin,-0.48571428571428577,0.3287230320699708,-0.4185786809383313,0.40880116882630957
+uncertain,mean_log_nsaf,Epithelial/mucosal basement membrane ECM,6,Blood Vessel; Fallopian Tube; Kidney; Lung; Ovary; Skin,-0.028571428571428574,0.9571545189504373,-0.2671445637340174,0.6088157029764549
+uncertain,mean_log_nsaf,Hepatic/plasma-associated ECM,6,Blood Vessel; Fallopian Tube; Kidney; Lung; Ovary; Skin,0.2,0.7040000000000001,0.11123733858221897,0.8338322033852422
+uncertain,mean_log_nsaf,Immune/lymphoid remodeling ECM,6,Blood Vessel; Fallopian Tube; Kidney; Lung; Ovary; Skin,-0.028571428571428574,0.9571545189504373,-0.15201576152906385,0.7737328079945986
+uncertain,mean_log_nsaf,Renal/endothelial basement membrane ECM,6,Blood Vessel; Fallopian Tube; Kidney; Lung; Ovary; Skin,-0.2,0.7040000000000001,-0.466239200633652,0.35131650283021043
+uncertain,mean_log_nsaf,Reproductive-specialized ECM,6,Blood Vessel; Fallopian Tube; Kidney; Lung; Ovary; Skin,0.08571428571428573,0.8717434402332361,0.2380178779729076,0.6497153381745925
+uncertain,mean_log_nsaf,Retinal/sensory ECM,6,Blood Vessel; Fallopian Tube; Kidney; Lung; Ovary; Skin,-0.2571428571428572,0.6227871720116619,0.16628549031195405,0.7528707332949325
+uncertain,mean_log_nsaf,Stromal remodeling ECM,6,Blood Vessel; Fallopian Tube; Kidney; Lung; Ovary; Skin,0.14285714285714288,0.7871720116618076,-0.0555863915460462,0.9167062894014291
+uncertain,mean_log_nsaf,Vascular/stromal/interstitial ECM,6,Blood Vessel; Fallopian Tube; Kidney; Lung; Ovary; Skin,0.6571428571428573,0.1561749271137024,0.46671923491007317,0.3507531366770181
