@@ -1,0 +1,16 @@
+analysis,parameter,value,reason
+Matrisome filtering,gene matching,"HGNC gene symbol, upper-case normalized","Consistent gene matching across HPA, GTEx, MatrisomeDB, and Tabula Sapiens."
+Expression transformation,bulk/tissue expression transform,log2(expression + 1),Reduces skew and keeps zero values defined.
+Z-score scoring,gene scaling,gene-wise z-score across samples,Normalizes gene-level variation before averaging program genes.
+NMF stability,rank range,k = 2 to 20,Evaluates factorization granularity and stability across ranks.
+NMF stability,random seeds,30,Evaluates component stability across initialization.
+NMF stability,top genes per component,30,Used for component comparison and program recovery.
+NMF stability,recovery threshold,>=4 overlapping genes and overlap coefficient >=0.13,Defines whether a curated program is recovered by an NMF component.
+MatrisomeDB null validation,random repeats,1000,Empirical null distribution for detection and abundance support.
+GTEx V11 classification,cross-validation,GroupKFold by subject_id,Prevents donor leakage across train/test folds.
+GTEx V11 classification,minimum samples per class,100,Removes very small classes from donor-stratified benchmark.
+Tabula Sapiens pseudobulk,pseudobulk unit,donor × organ × cell type × method,Avoids treating cells from the same donor as independent biological replicates.
+Tabula Sapiens pseudobulk,minimum cells per pseudobulk group,20,Filters unstable low-cell-count pseudobulk groups.
+Rank-based scoring,rank_percentile_score,mean within-sample percentile rank of genes in an ECM program,Tests robustness to expression scale and normalization.
+Rank-based scoring,top10_fraction_score,fraction of program genes in top 10% of Matrisome genes,Alternative rank-based enrichment metric.
+Spatial validation,datasets,10x Visium breast cancer CytAssist FFPE and healthy human lymph node,Focused spatial transcriptomic validation in diseased and healthy tissue contexts.

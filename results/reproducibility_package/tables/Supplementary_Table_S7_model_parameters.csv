@@ -1,0 +1,12 @@
+model,parameters,role
+Logistic regression,StandardScaler; class_weight=balanced; solver=lbfgs; max_iter=5000,Interpretable linear baseline.
+XGBoost,n_estimators=500; max_depth=3; learning_rate=0.05; subsample=0.85; colsample_bytree=0.9,Nonlinear ensemble benchmark.
+ExtraTrees,n_estimators=500; min_samples_leaf=2; class_weight=balanced,Tree-ensemble benchmark.
+Random forest,n_estimators=500; min_samples_leaf=2; class_weight=balanced_subsample,Tree-ensemble benchmark.
+HistGradientBoosting,max_iter=400; learning_rate=0.05; max_leaf_nodes=31; l2_regularization=0.01,Gradient boosting benchmark.
+Dense MLP,2 hidden layers; hidden_dim=128; batch normalization; ReLU; dropout=0.15,Dense deep-learning benchmark.
+Residual MLP,hidden_dim=128; 3 residual blocks; dropout=0.15,Residual deep-learning benchmark.
+FT-Transformer-lite,d_token=64; n_heads=4; n_layers=3; dropout=0.15,Lightweight tabular transformer benchmark.
+TabNet,n_d=16; n_a=16; n_steps=3; gamma=1.3; lambda_sparse=1e-4; mask_type=entmax,Attention-based tabular benchmark.
+TabICL,default TabICLClassifier,Tabular in-context learning benchmark.
+TabPFN,default TabPFNClassifier,Attempted tabular foundation model; failed for tasks with >10 classes.
