@@ -64,3 +64,4 @@ Thumbs.db
 logs/
 *.log
 configs/local_paths.yaml
+results/
